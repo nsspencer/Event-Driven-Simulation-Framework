@@ -4,11 +4,12 @@
 #include <chrono>
 #include <thread>
 
+using Event = DES::Event<double>;
+using Simulator = DES::Simulator<double>;
 
-
-struct Print : public DES::Event<double>
+struct Print : public Event
 {
-    Print(double time) : DES::Event<double>(time){}
+    Print(double time) : Event(time){}
 
     void run()
     {
@@ -16,29 +17,29 @@ struct Print : public DES::Event<double>
     }
 };
 
-struct Shutdown : public DES::Event<double>
+struct Shutdown : public Event
 {
-    Shutdown(double time) : DES::Event<double>(time) {}
+    Shutdown(double time) : Event(time) {}
 
     void run()
     {
-        DES::Simulator<double>* sim = DES::Simulator<double>::get_instance();
+        Simulator* sim = Simulator::get_instance();
         std::cout << "Shutting down at time: " << m_time << std::endl;
         sim->shutdown();
     }
 };
 
-struct PrintForNSeconds : public DES::Event<double>
+struct PrintForNSeconds : public Event
 {
     double duration_s;
     double offset_s;
 
-    PrintForNSeconds(double duration_s, double offset_s, double start_time_s) : duration_s(duration_s), offset_s(offset_s), DES::Event<double>(start_time_s){}
+    PrintForNSeconds(double duration_s, double offset_s, double start_time_s) : duration_s(duration_s), offset_s(offset_s), Event(start_time_s){}
 
     void run()
     {
         std::cout << "Printing Time: " << m_time << std::endl;
-        auto* sim = DES::Simulator<double>::get_instance();        
+        auto* sim = Simulator::get_instance();        
         
         if (m_time >= duration_s)
         {
@@ -55,13 +56,13 @@ struct PrintForNSeconds : public DES::Event<double>
 void delay_add_event(int delay_ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-    DES::Simulator<double>* sim = DES::Simulator<double>::get_instance();
+    Simulator* sim = Simulator::get_instance();
     sim->add_event(std::move(std::unique_ptr<Shutdown>(new Shutdown(sim->get_current_time()))));
 }
 
 int main()
 {
-    DES::Simulator<double>* sim = DES::Simulator<double>::get_instance();
+    Simulator* sim = Simulator::get_instance();
 
     sim->add_event(std::move(std::unique_ptr<Print>(new Print(1.0))));
     sim->add_event(std::move(std::unique_ptr<PrintForNSeconds>(new PrintForNSeconds(1000000, 1.0, 0))));
