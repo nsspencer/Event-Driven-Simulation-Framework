@@ -6,9 +6,9 @@
 
 
 
-struct Print : public DES::Event
+struct Print : public DES::Event<double>
 {
-    Print(double time) : DES::Event(time){}
+    Print(double time) : DES::Event<double>(time){}
 
     void run()
     {
@@ -16,29 +16,29 @@ struct Print : public DES::Event
     }
 };
 
-struct Shutdown : public DES::Event
+struct Shutdown : public DES::Event<double>
 {
-    Shutdown(double time) : DES::Event(time) {}
+    Shutdown(double time) : DES::Event<double>(time) {}
 
     void run()
     {
-        DES::Simulator* sim = DES::Simulator::get_instance();
+        DES::Simulator<double>* sim = DES::Simulator<double>::get_instance();
         std::cout << "Shutting down at time: " << m_time << std::endl;
         sim->shutdown();
     }
 };
 
-struct PrintForNSeconds : public DES::Event
+struct PrintForNSeconds : public DES::Event<double>
 {
     double duration_s;
     double offset_s;
 
-    PrintForNSeconds(double duration_s, double offset_s, double start_time_s) : duration_s(duration_s), offset_s(offset_s), DES::Event(start_time_s){}
+    PrintForNSeconds(double duration_s, double offset_s, double start_time_s) : duration_s(duration_s), offset_s(offset_s), DES::Event<double>(start_time_s){}
 
     void run()
     {
         std::cout << "Printing Time: " << m_time << std::endl;
-        auto* sim = DES::Simulator::get_instance();        
+        auto* sim = DES::Simulator<double>::get_instance();        
         
         if (m_time >= duration_s)
         {
@@ -55,13 +55,13 @@ struct PrintForNSeconds : public DES::Event
 void delay_add_event(int delay_ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-    DES::Simulator* sim = DES::Simulator::get_instance();
+    DES::Simulator<double>* sim = DES::Simulator<double>::get_instance();
     sim->add_event(std::move(std::unique_ptr<Shutdown>(new Shutdown(sim->get_current_time()))));
 }
 
 int main()
 {
-    DES::Simulator* sim = DES::Simulator::get_instance();
+    DES::Simulator<double>* sim = DES::Simulator<double>::get_instance();
 
     sim->add_event(std::move(std::unique_ptr<Print>(new Print(1.0))));
     sim->add_event(std::move(std::unique_ptr<PrintForNSeconds>(new PrintForNSeconds(1000000, 1.0, 0))));
