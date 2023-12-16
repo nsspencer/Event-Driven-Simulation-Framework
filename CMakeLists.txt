@@ -21,4 +21,4 @@ endif()
 add_library(event_sim SHARED src/simulator.cpp)
 target_include_directories(event_sim PUBLIC include)
 
-add_subdirectory(test)
+add_subdirectory(examples)

@@ -11,27 +11,27 @@
 namespace DES
 {
 
-template <typename TIME_T>
+template <typename TIME>
 struct Comparer
 {
     inline
-    bool operator()(const std::unique_ptr<Event<TIME_T>>& a, const std::unique_ptr<Event<TIME_T>>& b)
+    bool operator()(const std::unique_ptr<Event<TIME>>& a, const std::unique_ptr<Event<TIME>>& b)
     {
         return a->get_time() > b->get_time();
     }
 };
 
 
-template <typename TIME_T>
+template <typename TIME>
 class Simulator
 {
 
 private:
 
     bool m_active;
-    std::priority_queue<std::unique_ptr<Event<TIME_T>>, std::vector<std::unique_ptr<Event<TIME_T>>>, Comparer<TIME_T>> m_queue;
-    static Simulator<TIME_T>* m_instance;
-    TIME_T m_current_time;
+    std::priority_queue<std::unique_ptr<Event<TIME>>, std::vector<std::unique_ptr<Event<TIME>>>, Comparer<TIME>> m_queue;
+    static Simulator<TIME>* m_instance;
+    TIME m_current_time;
 
     // Thread safety members
     std::mutex mtx;
@@ -73,7 +73,7 @@ public:
                 wait_for_events();
 
             // Take ownership of the event
-            std::unique_ptr<Event<TIME_T>> curr_event = std::move(const_cast<std::unique_ptr<Event<TIME_T>>&>(m_queue.top()));
+            std::unique_ptr<Event<TIME>> curr_event = std::move(const_cast<std::unique_ptr<Event<TIME>>&>(m_queue.top()));
             
             // remove the event from the queue, since it may add more events
             m_queue.pop();
@@ -97,23 +97,21 @@ public:
     static
     Simulator* get_instance()
     {
-        if (m_instance != nullptr)
-        {
+        if (m_instance)
             return m_instance;
-        }
 
         m_instance = new Simulator();
         return m_instance;
     }
 
     /// @brief Add an event to the queue.
-    void add_event(std::unique_ptr<Event<TIME_T>> event)
+    void add_event(std::unique_ptr<Event<TIME>> event)
     {
         std::lock_guard<std::mutex> lock(mtx);
         m_queue.emplace(std::move(event));
 
         // only notify if we are changing state to non-empty
-        if (m_events_available == false)
+        if (!m_events_available)
         {
             m_events_available = true;
             cv.notify_one();
@@ -121,7 +119,7 @@ public:
     }
 
     /// @brief Get the current time of the Simulator, provided by the last Event that was run.
-    TIME_T get_current_time()
+    TIME get_current_time()
     {
         return m_current_time;
     }
